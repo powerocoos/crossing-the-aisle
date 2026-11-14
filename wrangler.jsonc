@@ -1,0 +1,9 @@
+{
+  // Static site on Cloudflare Workers. The built files in ./public are committed by the update job,
+  // so Cloudflare needs no build command: the deploy command is `npx wrangler deploy`.
+  "name": "crossing-the-aisle",
+  "compatibility_date": "2026-11-13",
+  "assets": {
+    "directory": "./public"
+  }
+}

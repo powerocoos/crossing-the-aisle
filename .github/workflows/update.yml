@@ -1,0 +1,66 @@
+name: Update votes
+
+on:
+  schedule:
+    - cron: "23 */3 * * *"        # every three hours
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["pipeline/**", "site/**", ".github/workflows/update.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-votes
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Code changes also re-check recent stored votes against the official records.
+      - name: Fetch new votes from the House and Senate
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          VERIFY: ${{ github.event_name == 'schedule' && '0' || '20' }}
+        run: |
+          set -o pipefail
+          python3 pipeline/fetch.py --verify "$VERIFY" 2>&1 | tee fetch.log
+
+      - name: Run checks
+        run: |
+          set -o pipefail
+          python3 pipeline/test_pipeline.py 2>&1 | tee -a fetch.log
+
+      - name: Build the site
+        run: python3 pipeline/build.py
+
+      # Nothing is published unless every step above succeeded.
+      - name: Publish
+        run: |
+          rm -f data/last_error.txt
+          if grep -q "^VERIFY" fetch.log; then grep "^VERIFY" fetch.log > data/last_verify.txt; fi
+          git config user.name "crossing-the-aisle-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data public
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update votes ($(date -u +%Y-%m-%d))"
+            git push
+          fi
+
+      - name: Record the failure
+        if: failure()
+        run: |
+          git checkout -- . || true
+          { date -u; tail -n 40 fetch.log 2>/dev/null; } > data/last_error.txt
+          git config user.name "crossing-the-aisle-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/last_error.txt
+          git commit -m "Record failed update" && git push || true

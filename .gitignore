@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+*.tmp
+fetch.log
+.wrangler/
+node_modules/
