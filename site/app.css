@@ -93,6 +93,8 @@ summary{cursor:pointer;font-weight:600;padding:6px 0}
 .pct{font-weight:700}
 footer{border-top:1px solid var(--line);padding:16px 0 32px;font-size:12.5px;color:var(--muted)}
 footer p{margin:0 0 6px;max-width:70ch}
+footer .tip{margin:12px 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+footer a{color:var(--accent)}
 @media (max-width:420px){h1{font-size:25px} h2{font-size:21px} .pill{min-width:62px}}
 @media (prefers-reduced-motion:no-preference){.row{transition:background .12s}}
 .static a{color:var(--accent)} .static ul{padding-left:18px;margin:8px 0} .static li{margin:3px 0}
