@@ -1,0 +1,1 @@
+VERIFY checked 80 stored votes against the official records: 0 differ
