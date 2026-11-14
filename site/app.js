@@ -38,7 +38,7 @@ function voteRow(v,extra){
   return '<button class="row" data-go="vote-'+v.id+'"><div class="meta"><span>'+fdate(v.dt)+'</span><span class="chip '+v.c+'">'+chName(v.c)+'</span>'+(v.lab?'<span>'+esc(v.lab)+'</span>':'')+(extra?'':xchips(v))+'</div>'+
     '<div class="split"><div><div class="ttl">'+esc(v.t)+'</div><div class="sub">'+esc(v.q)+' · '+esc(v.res)+'</div></div>'+(extra||'')+'</div>'+(extra?'':bars(v))+'</button>'}
 
-var state={tab:'votes',vCh:'',vKind:'fp',vX:'',vQ:'',bQ:'',mQ:'',mCh:'',mSt:'',mP:'',fSt:'',kCh:'s',kP:'D',rKind:'fp',rBrk:false,rQ:'',lim:40};
+var state={tab:'votes',vCh:'',vKind:'fp',vX:'',vQ:'',bQ:'',mQ:'',mCh:'',mSt:'',mP:'',fSt:'',fZip:'',kCh:'s',kP:'D',rKind:'fp',rBrk:false,rQ:'',lim:40};
 var TABS=[['votes','Recent votes'],['bills','Bills'],['members','Members'],['find','Find my rep'],['breaks','Crossing the aisle']];
 var main=document.getElementById('main'),tabsEl=document.getElementById('tabs');
 document.getElementById('asof').textContent=fdate(D.meta.latest);
@@ -79,14 +79,45 @@ function viewMembers(){
   return '<h2>Members</h2><p class="lede">Everyone who has served in the 119th Congress. Open a member for the full record.</p>'+
    '<div class="filters"><input type="search" id="mQ" placeholder="Search by name" aria-label="Search members" value="'+esc(state.mQ)+'">'+stateSelect('mSt',state.mSt,'All states')+seg('mP',state.mP,[['','All'],['D','Democrats'],['R','Republicans']])+seg('mCh',state.mCh,[['','Both'],['h','House'],['s','Senate']])+'</div>'+
    '<div id="res">'+paged(items,memberRow)+'</div>'}
+var zips=null,zipsState='';
+function loadZips(){
+  if(zips||zipsState==='loading')return;zipsState='loading';
+  fetch('/zips.json').then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(z){zips=z;zipsState='';if(cur.id==='find')render(true)}).catch(function(){zipsState='failed';if(cur.id==='find')render(true)})}
+function repsFor(st,d){return D.members.filter(function(m){return m.cur&&m.c==='h'&&m.s===st&&(m.d||0)===d})}
+function sensFor(st){return D.members.filter(function(m){return m.cur&&m.c==='s'&&m.s===st})}
+function stateBlock(st,sen,rep){
+  var h='';
+  if(sen.length)h+='<h3>Senate</h3><div class="list">'+sen.map(memberRow).join('')+'</div>';
+  h+='<h3>House</h3>'+(rep.length?'<div class="list">'+rep.map(memberRow).join('')+'</div>':'<div class="panel">No current House member on record.</div>');
+  return h}
+function zipResult(z){
+  if(zipsState==='failed')return '<p class="note">The ZIP code list did not load. Check your connection, or pick your state below.</p>';
+  if(!zips)return '<p class="note">Looking up '+esc(z)+'…</p>';
+  var hit=zips[z];
+  if(!hit)return '<div class="panel">ZIP code '+esc(z)+' is not in the list. Some new and PO box ZIP codes are missing. Pick your state below instead.</div>';
+  var parts=hit.split(',').map(function(k){var m=/^([A-Z]{2})(\d+)$/.exec(k);return{st:m[1],d:+m[2]}}),h='',seen={},n=parts.length;
+  h+='<p class="lede">ZIP code '+esc(z)+(n>1?' is split between '+n+' congressional districts. Which one is yours depends on your street address, so each is shown.':' is in one congressional district.')+'</p>';
+  parts.forEach(function(p){
+    var label=p.d===0?STATES[p.st]+' (at large)':STATES[p.st]+', District '+p.d;
+    h+='<h3>'+esc(label)+'</h3>';
+    var rep=repsFor(p.st,p.d);
+    h+=rep.length?'<div class="list">'+rep.map(memberRow).join('')+'</div>':'<div class="panel">No current House member on record for this district.</div>'});
+  Object.keys(parts.reduce(function(o,p){o[p.st]=1;return o},{})).forEach(function(st){
+    var sen=sensFor(st);if(sen.length)h+='<h3>'+esc(STATES[st])+' senators</h3><div class="list">'+sen.map(memberRow).join('')+'</div>'});
+  if(n>1)h+='<p class="note">To narrow it down, the House\'s own <a href="https://www.house.gov/representatives/find-your-representative" target="_blank" rel="noopener">Find Your Representative</a> tool can help.</p>';
+  return h}
 function viewFind(){
-  var h='<h2>Find my rep</h2><p class="lede">Pick your state to see who represents it in Congress.</p><div class="filters">'+stateSelect('fSt',state.fSt,'Choose a state')+'</div>';
-  if(!state.fSt)return h+'<p class="note">Lookup by ZIP code or street address is not available yet.</p>';
+  var z=(state.fZip||'').replace(/\D/g,'');
+  var h='<h2>Find my rep</h2><p class="lede">Enter your ZIP code to see who represents you in Congress.</p><div class="filters"><input type="search" id="fZip" inputmode="numeric" autocomplete="postal-code" maxlength="10" placeholder="ZIP code" aria-label="ZIP code" value="'+esc(state.fZip)+'"></div>';
+  if(z.length===5){loadZips();h+=zipResult(z)}
+  else if(z.length>0)h+='<p class="note">Enter all 5 digits of your ZIP code.</p>';
+  h+='<h3>Or pick your state</h3><div class="filters">'+stateSelect('fSt',state.fSt,'Choose a state')+'</div>';
+  if(!state.fSt)return h+'<p class="note">Districts follow the maps used for the current 119th Congress, which ends January 3, 2027. Members elected in November 2026 take office after that.</p>';
   var cur=D.members.filter(function(m){return m.s===state.fSt&&m.cur});
   var sen=cur.filter(function(m){return m.c==='s'}),rep=cur.filter(function(m){return m.c==='h'}).sort(function(a,b){return(a.d||0)-(b.d||0)});
   h+='<h3>Senate</h3>'+(sen.length?'<div class="list">'+sen.map(memberRow).join('')+'</div>':'<div class="panel">No senators. This is not a state.</div>');
   h+='<h3>House</h3>'+(rep.length?'<div class="list">'+rep.map(memberRow).join('')+'</div>':'<div class="panel">No current House member on record.</div>');
-  if(rep.length>1)h+='<p class="note">House members are listed by district number. If you do not know your district, house.gov has a ZIP code lookup.</p>';
+  if(rep.length>1)h+='<p class="note">House members are listed by district number. Enter your ZIP code above to find your district.</p>';
   return h}
 function viewBreaks(){
   var g=state.kP,o=OTHER[g];

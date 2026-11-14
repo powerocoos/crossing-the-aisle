@@ -60,6 +60,18 @@ paths = [p[0] for p in pages]
 check("one page per vote, bill and member", len(paths) == len(set(paths)) == 5 + len(data["votes"]) + len(data["bills"]) + len(data["members"]))
 check("every page has a title and description", all(p[1] and p[2] for p in pages))
 
+from build import load_zips
+zips = load_zips()
+check("ZIP list is large enough", len(zips) > 30000, len(zips))
+cur_h = {(m["s"], m["d"] or 0) for m in data["members"] if m["cur"] and m["c"] == "h" and m["vot"]}
+zip_d = {(k[:2], int(k[2:])) for v in zips.values() for k in v.split(",")}
+bad = sorted(d for d in cur_h if d not in zip_d)
+check("every current voting House seat is reachable from some ZIP code", not bad, bad[:5])
+bad = sorted(d for d in zip_d if d not in cur_h and d[0] not in ("GU", "VI", "AS", "MP"))
+check("every ZIP code district has a current House member (vacancies allowed up to 5)", len(bad) <= 5, bad[:8])
+check("known ZIP codes (single-district places)", (zips.get("20001"), zips.get("82001"), zips.get("99501")) == ("DC0", "WY0", "AK0"), (zips.get("20001"), zips.get("82001"), zips.get("99501")))
+check("a split ZIP code lists several districts", any("," in v for v in zips.values()))
+
 if failures:
     print("%d check(s) failed" % len(failures))
     sys.exit(1)

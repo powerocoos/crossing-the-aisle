@@ -14,3 +14,7 @@ including without limitation the rights to use, copy, modify, merge, publish, di
 copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following
 conditions: The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+## ZIP code lookup data
+
+`data/zip_districts.csv` is derived from `zccd.csv` in OpenSourceActivismTech/us-zipcodes-congress (https://github.com/OpenSourceActivismTech/us-zipcodes-congress), which maps Census ZIP Code Tabulation Areas to 119th Congress districts. The underlying Census data are United States Government Works. The conversion scripts there are MIT licensed, Copyright (c) 2023 Spacedog XYZ. ZIP codes and districts do not line up exactly, so a ZIP code that crosses district lines shows every district it touches.

@@ -252,7 +252,7 @@ def render_pages(data):
            "<h2>Members</h2><ul>%s</ul>" % "".join("<li>%s, %s</li>" % (member_link(m), esc(seat(m))) for m in data["members"]))
     yield ("/find/", "Find my rep · " + NAME,
            "Pick your state to see your senators and representatives and how they have voted.",
-           "<h2>Find my rep</h2><p>Pick your state to see who represents it in Congress.</p>")
+           "<h2>Find my rep</h2><p>Enter your ZIP code, or pick your state, to see who represents you in Congress.</p>")
     top = []
     for g in ("D", "R"):
         for c in ("s", "h"):
@@ -327,6 +327,16 @@ def render_pages(data):
         yield ("/member/%s/" % m["id"], title, desc, "".join(body))
 
 
+def load_zips():
+    """ZIP code -> "ST12,ST13" (state plus district, 0 = at-large) from data/zip_districts.csv."""
+    import csv
+    out = {}
+    with open(os.path.join(DATA, "zip_districts.csv"), newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            out.setdefault(r["zip"], []).append("%s%d" % (r["state"], int(r["district"])))
+    return {z: ",".join(v) for z, v in out.items()}
+
+
 def write_site(data):
     pub = os.path.join(ROOT, "public")
     shutil.rmtree(pub, ignore_errors=True)
@@ -342,6 +352,7 @@ def write_site(data):
         with open(os.path.join(pub, name), "wb") as f:
             f.write(blob)
     write_json(os.path.join(pub, "data.json"), data)
+    write_json(os.path.join(pub, "zips.json"), load_zips())
     with open(os.path.join(site, "template.html"), encoding="utf-8") as f:
         template = f.read().replace("{{V}}", version.hexdigest()[:10]).replace("{{LATEST}}", fdate(data["meta"]["latest"]))
     before, rest = template.split("{{HEAD}}")
