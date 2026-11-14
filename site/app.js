@@ -1,139 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Crossing the Aisle</title>
-<meta name="description" content="See how every Democrat and Republican in Congress voted on each bill, and who crossed the aisle to vote with the other party. Built from official House and Senate roll call records.">
-<link rel="canonical" href="https://crossingtheaisle.us/">
-<meta property="og:title" content="Crossing the Aisle">
-<meta property="og:description" content="How Congress voted on every roll call, and who voted with the other party.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://crossingtheaisle.us/">
-<meta name="theme-color" content="#1b4fbf">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
-<style>
-/* Layout idea: a single reading column like a printed roll call sheet; a sticky tab bar, dense rows, one tally bar per vote. */
-:root{
-  --paper:#f4f6fa; --card:#ffffff; --ink:#111c2e; --muted:#566378; --line:#d7dde8;
-  --accent:#1b4fbf; --accent-soft:#e3ebfb;
-  --yea:#1f7a4d; --nay:#6d3f9c; --nv:#8a94a6; --brk:#a05a00; --brk-soft:#fbefd9; --rep:#b3261e;
-  --display:"Newsreader", Georgia, "Times New Roman", serif;
-  --body:"Libre Franklin", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    color-scheme:dark;
-    --paper:#0d1422; --card:#151e30; --ink:#e8edf6; --muted:#9aa7bd; --line:#2a364c;
-    --accent:#8fb2ff; --accent-soft:#1c2b4c;
-    --yea:#5fc692; --nay:#c3a0ee; --nv:#6f7b90; --brk:#f0b455; --brk-soft:#3a2c10; --rep:#ff8d85;
-  }
-}
-:root[data-theme="dark"]{
-  color-scheme:dark;
-  --paper:#0d1422; --card:#151e30; --ink:#e8edf6; --muted:#9aa7bd; --line:#2a364c;
-  --accent:#8fb2ff; --accent-soft:#1c2b4c;
-  --yea:#5fc692; --nay:#c3a0ee; --nv:#6f7b90; --brk:#f0b455; --brk-soft:#3a2c10; --rep:#ff8d85;
-}
-*{box-sizing:border-box}
-html,body{margin:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
-a{color:var(--accent)}
-button,select,input{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.wrap{max-width:820px;margin:0 auto;padding:0 16px}
-header.top{padding:18px 0 10px}
-h1{font-family:var(--display);font-weight:600;font-size:30px;line-height:1.1;margin:0;text-wrap:balance}
-.tag{color:var(--muted);margin:6px 0 0;max-width:60ch}
-.asof{color:var(--muted);font-size:12.5px;margin:6px 0 0}
-nav.tabs{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
-nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-nav.tabs .wrap::-webkit-scrollbar{display:none}
-nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 10px 9px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer}
-nav.tabs button[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
-main{padding:16px 0 48px}
-h2{font-family:var(--display);font-weight:600;font-size:23px;line-height:1.2;margin:0 0 4px;text-wrap:balance}
-h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 0 8px;font-weight:700}
-.lede{color:var(--muted);margin:0 0 14px;max-width:65ch}
-.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
-.filters input[type=search],.filters select{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:42px}
-.filters input[type=search]{flex:1 1 200px;min-width:0}
-.filters select{flex:0 1 auto;max-width:100%}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
-.seg button{border:0;background:none;padding:9px 12px;min-height:42px;cursor:pointer;font-weight:500;color:var(--muted)}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--card);font-weight:600}
-.check{display:inline-flex;align-items:center;gap:6px;padding:9px 4px;min-height:42px}
-.count{color:var(--muted);font-size:13px;margin:0 0 6px;font-variant-numeric:tabular-nums}
-.list{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.row{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 14px;cursor:pointer}
-.row:last-child{border-bottom:0}
-.row:hover{background:var(--accent-soft)}
-.row .meta{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.row .ttl{font-weight:600;margin:3px 0 2px;overflow-wrap:anywhere}
-.row .sub{font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
-.chip{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:600;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-.chip.h,.chip.s{color:var(--accent);border-color:var(--accent)}
-.chip.pD{color:var(--accent);border-color:var(--accent)} .chip.pR{color:var(--rep);border-color:var(--rep)}
-.pt{font-weight:400} .pt.D{color:var(--accent)} .pt.R{color:var(--rep)}
-.pbar{display:grid;grid-template-columns:14px minmax(40px,1fr) auto;gap:8px;align-items:center;margin-top:6px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.pbar .bar{margin:0}.pbar b{color:var(--ink)}.pbar .k{font-weight:700}.pbar .k.D{color:var(--accent)}.pbar .k.R{color:var(--rep)}
-.chip.brk{background:var(--brk-soft);border-color:var(--brk);color:var(--brk)}
-.pill{display:inline-block;min-width:74px;text-align:center;border-radius:6px;padding:2px 8px;font-size:12.5px;font-weight:700;color:var(--card)}
-.pill.Y{background:var(--yea)} .pill.N{background:var(--nay)} .pill.X,.pill.P,.pill.S{background:var(--nv)}
-.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin:7px 0 4px}
-.bar i{display:block;height:100%}
-.bar .Y{background:var(--yea)} .bar .N{background:var(--nay)} .bar .X{background:var(--nv)}
-.tally{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.tally b{color:var(--ink)}
-.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
-.dot.Y{background:var(--yea)} .dot.N{background:var(--nay)} .dot.X{background:var(--nv)}
-.more{margin:12px auto 0;display:block;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer;color:var(--accent)}
-.back{background:none;border:0;color:var(--accent);font-weight:600;padding:6px 0;margin:0 0 8px;cursor:pointer}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.tile .num{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
-.tile .lab{font-size:12.5px;color:var(--muted)}
-.tile.brk .num{color:var(--brk)}
-.kv{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13.5px;color:var(--muted);margin:6px 0 0}
-.names{display:flex;flex-wrap:wrap;gap:6px}
-.names button{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer}
-.names button:hover{border-color:var(--accent);color:var(--accent)}
-.names.brk button{border-color:var(--brk);background:var(--brk-soft)}
-details{margin:10px 0 0}
-summary{cursor:pointer;font-weight:600;padding:6px 0}
-.note{font-size:13px;color:var(--muted);margin:10px 0 0;max-width:65ch}
-.split{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.split .right{text-align:right;flex:0 0 auto;font-variant-numeric:tabular-nums}
-.pct{font-weight:700}
-footer{border-top:1px solid var(--line);padding:16px 0 32px;font-size:12.5px;color:var(--muted)}
-footer p{margin:0 0 6px;max-width:70ch}
-@media (max-width:420px){h1{font-size:25px} h2{font-size:21px} .pill{min-width:62px}}
-@media (prefers-reduced-motion:no-preference){.row{transition:background .12s}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header class="top">
-    <h1>Crossing the Aisle</h1>
-    <p class="tag">How Democrats and Republicans in the U.S. House and Senate voted on every roll call of the 119th Congress, and who voted with the other party.</p>
-    <p class="asof">Official records through <span id="asof">…</span></p>
-  </header>
-</div>
-<nav class="tabs" aria-label="Sections"><div class="wrap" id="tabs"></div></nav>
-<div class="wrap">
-  <main id="main"><p class="lede">Loading votes…</p></main>
-  <footer>
-    <p>Crossing the Aisle is an independent project. It is not affiliated with Congress, any government office, or any political party or campaign.</p>
-    <p>Vote records come from the Office of the Clerk of the U.S. House and the U.S. Senate roll call pages, and every vote links to its official record. The member roster comes from the public-domain congress-legislators project. Bill summaries are from the Congressional Research Service via Congress.gov.</p>
-    <p>Votes before November 13, 2026 were loaded from the open Yeas &amp; Nays dataset (MIT License), which compiles the same official records. Independents are counted with the party they caucus with.</p>
-    <p>A member "sided with" the other party when most Democrats and most Republicans in that chamber voted opposite ways and the member voted with the other party's majority. Missed votes and votes of Present do not count.</p>
-    <p>Found a mistake? The code and data are public at <a href="https://github.com/powerocoos/crossing-the-aisle" target="_blank" rel="noopener">github.com/powerocoos/crossing-the-aisle</a>.</p>
-  </footer>
-</div>
-<script>
 function start(D){
 "use strict";
 var STATES={AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia",PR:"Puerto Rico",GU:"Guam",VI:"U.S. Virgin Islands",AS:"American Samoa",MP:"Northern Mariana Islands"};
@@ -271,44 +135,52 @@ function viewMember(id){var m=mById[id];if(!m)return '<div class="panel">Member 
    '<div id="res">'+paged(rec,function(v){var ch=posOf(v,m);return voteRow(v,'<div class="right"><span class="pill '+ch+'">'+POS[ch]+'</span>'+(isCross(v,ch,m.g)?'<div style="margin-top:4px"><span class="chip brk">With '+o+'</span></div>':'')+'</div>')})+'</div>';
   return h}
 
-function route(){var h=(location.hash||'').replace(/^#/,'');
-  var m=/^(vote|bill|member)-(.+)$/.exec(h);
-  if(m)return{kind:m[1],id:m[2]};
-  for(var i=0;i<TABS.length;i++)if(TABS[i][0]===h)return{kind:'tab',id:h};
-  return{kind:'tab',id:state.tab}}
-var cur=null;
+var TABPATH={votes:'/',bills:'/bills/',members:'/members/',find:'/find/',breaks:'/crossing/'};
+function urlFor(r){return r.kind==='tab'?TABPATH[r.id]:'/'+r.kind+'/'+r.id+'/'}
+function parseTarget(t){var m=/^(vote|bill|member)-(.+)$/.exec(t);return m?{kind:m[1],id:m[2]}:{kind:'tab',id:t}}
+function route(){
+  var h=(location.hash||'').replace(/^#/,''),m=/^(vote|bill|member)-(.+)$/.exec(h);
+  if(m){try{history.replaceState(null,'','/'+m[1]+'/'+m[2]+'/')}catch(e){}return{kind:m[1],id:m[2]}}
+  var p=location.pathname.replace(/index\.html$/,'');if(p.charAt(p.length-1)!=='/')p+='/';
+  m=/^\/(vote|bill|member)\/([^\/]+)\/$/.exec(p);
+  if(m)return{kind:m[1],id:decodeURIComponent(m[2])};
+  for(var k in TABPATH)if(TABPATH[k]===p)return{kind:'tab',id:k};
+  return{kind:'tab',id:'votes'}}
+function titleFor(r){var S=' · Crossing the Aisle';
+  if(r.kind==='vote'){var v=vById[r.id];return v?((v.lab?v.lab+': ':'')+v.t).slice(0,70)+' · '+chName(v.c)+' vote'+S:'Vote'+S}
+  if(r.kind==='bill'){var b=D.bills[r.id];return b?(b.lab+': '+(b.t||'')).slice(0,80)+S:'Bill'+S}
+  if(r.kind==='member'){var m=mById[r.id];return m?m.n+' voting record'+S:'Member'+S}
+  return r.id==='votes'?'Crossing the Aisle':({bills:'Bills',members:'Members of Congress',find:'Find my rep',breaks:'Who crosses the aisle'})[r.id]+S}
+var cur=null,depth=0;
 function render(keepFocus){
   var r=cur,html;
   if(r.kind==='tab'){state.tab=r.id;html={votes:viewVotes,bills:viewBills,members:viewMembers,find:viewFind,breaks:viewBreaks}[r.id]()}
-  else{html='<button class="back" data-back="1">← Back</button>'+({vote:viewVote,bill:viewBill,member:viewMember}[r.kind](r.id))}
+  else{html='<div class="topline"><button class="back" data-back="1">← Back</button><button class="share" data-share="1">Copy link</button></div>'+({vote:viewVote,bill:viewBill,member:viewMember}[r.kind](r.id))}
   var f=keepFocus&&document.activeElement&&document.activeElement.id,pos=f&&document.activeElement.selectionStart;
-  main.innerHTML=html;drawTabs();
+  main.innerHTML=html;drawTabs();document.title=titleFor(r);
   if(f){var el=document.getElementById(f);if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(e){}}}}
-var trail=[];
-function go(target,push){
-  if(push!==false&&cur)trail.push(cur);
-  var m=/^(vote|bill|member)-(.+)$/.exec(target);
-  cur=m?{kind:m[1],id:m[2]}:{kind:'tab',id:target};
-  if(cur.kind==='tab')trail=[];
-  state.lim=40;if(cur.kind==='member'){state.rQ='';state.rBrk=false}
-  try{if(location.hash!=='#'+target){silent=true;location.hash=target}}catch(e){}
+function go(target){
+  cur=parseTarget(target);state.lim=40;
+  if(cur.kind==='member'){state.rQ='';state.rBrk=false}
+  try{history.pushState(null,'',urlFor(cur));depth++}catch(e){}
   render();window.scrollTo(0,0)}
-var silent=false;
-window.addEventListener('hashchange',function(){if(silent){silent=false;return}var r=route();cur=r;state.lim=40;render();window.scrollTo(0,0)});
+window.addEventListener('popstate',function(){cur=route();state.lim=40;if(depth>0)depth--;render();window.scrollTo(0,0)});
 document.addEventListener('click',function(e){
-  var t=e.target.closest('[data-go],[data-back],[data-more],[data-set]');if(!t)return;
+  var t=e.target.closest('[data-go],[data-back],[data-more],[data-set],[data-share]');if(!t)return;
   if(t.dataset.go){go(t.dataset.go)}
-  else if(t.dataset.back){var p=trail.pop();if(p){cur=p;state.lim=40;try{silent=true;location.hash=p.kind==='tab'?p.id:p.kind+'-'+p.id}catch(e2){}render();window.scrollTo(0,0)}else go(state.tab,false)}
+  else if(t.dataset.back){if(depth>0)history.back();else go(state.tab)}
   else if(t.dataset.more){state.lim+=40;render()}
-  else if(t.dataset.set){state[t.dataset.set]=t.dataset.val;state.lim=40;render()}});
+  else if(t.dataset.set){state[t.dataset.set]=t.dataset.val;state.lim=40;render()}
+  else if(t.dataset.share){
+    var url=location.href;
+    if(navigator.share){navigator.share({title:document.title,url:url}).catch(function(){})}
+    else if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){t.textContent='Link copied'},function(){t.textContent=url})}
+    else{t.textContent=url}}});
 var timer;
 document.addEventListener('input',function(e){var id=e.target.id;if(!id||!(id in state))return;
   state[id]=e.target.type==='checkbox'?e.target.checked:e.target.value;state.lim=40;
   if(e.target.type==='search'){clearTimeout(timer);timer=setTimeout(function(){render(true)},140)}else render()});
 cur=route();render();
 }
-fetch('data.json').then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(start).catch(function(){
+fetch('/data.json').then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(start).catch(function(){
   document.getElementById('main').innerHTML='<div class="panel">The vote data did not load. Check your connection and reload the page.</div>'});
-</script>
-</body>
-</html>

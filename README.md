@@ -11,8 +11,8 @@ An independent project. Not affiliated with Congress, any government office, or 
    House Clerk and the Senate, re-checks the five most recent votes in each chamber for corrections, and
    refreshes the member roster.
 2. `pipeline/test_pipeline.py` checks the data. If any check fails, nothing is published.
-3. `pipeline/build.py` writes the site into `public/` and the Action commits it.
-4. Cloudflare redeploys the site whenever `main` changes (`wrangler.jsonc`, deploy command `npx wrangler deploy`).
+3. The Action commits the new data. Cloudflare then runs `python3 pipeline/build.py`, which writes the site
+   into `public/` (one page per vote, bill and member, plus a sitemap), and deploys it with `npx wrangler deploy`.
 
 The pipeline is plain Python 3 with no dependencies.
 
@@ -33,8 +33,8 @@ The pipeline is plain Python 3 with no dependencies.
 | `data/bills.json` | Bill titles, links and summaries |
 | `data/last_verify.txt` | Result of the latest re-check against the official records |
 | `data/last_error.txt` | Present only when the latest update failed |
-| `site/` | The page itself |
-| `public/` | Built site that Cloudflare serves |
+| `site/` | Page template, styles, script and static files |
+| `public/` | Built site (not committed; Cloudflare builds it) |
 | `pipeline/` | Fetch, check and build scripts |
 
 ## Running it yourself

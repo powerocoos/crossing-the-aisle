@@ -37,7 +37,8 @@ jobs:
           set -o pipefail
           python3 pipeline/test_pipeline.py 2>&1 | tee -a fetch.log
 
-      - name: Build the site
+      # Cloudflare builds the real site from the data; this only proves the build still works.
+      - name: Build check
         run: python3 pipeline/build.py
 
       # Nothing is published unless every step above succeeded.
@@ -47,7 +48,7 @@ jobs:
           if grep -q "^VERIFY" fetch.log; then grep "^VERIFY" fetch.log > data/last_verify.txt; fi
           git config user.name "crossing-the-aisle-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data public
+          git add -A data
           if git diff --cached --quiet; then
             echo "No changes."
           else

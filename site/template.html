@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{HEAD}}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/app.css?v={{V}}">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Crossing the Aisle</h1>
+    <p class="tag">How Democrats and Republicans in the U.S. House and Senate voted on every roll call of the 119th Congress, and who voted with the other party.</p>
+    <p class="asof">Official records through <span id="asof">{{LATEST}}</span></p>
+  </header>
+</div>
+<nav class="tabs" aria-label="Sections"><div class="wrap" id="tabs"><a href="/">Recent votes</a> <a href="/bills/">Bills</a> <a href="/members/">Members</a> <a href="/find/">Find my rep</a> <a href="/crossing/">Crossing the aisle</a></div></nav>
+<div class="wrap">
+  <main id="main"><div class="static">{{CONTENT}}</div></main>
+  <footer>
+    <p>Crossing the Aisle is an independent project. It is not affiliated with Congress, any government office, or any political party or campaign.</p>
+    <p>Vote records come from the Office of the Clerk of the U.S. House and the U.S. Senate roll call pages, and every vote links to its official record. The member roster comes from the public-domain congress-legislators project. Bill summaries are from the Congressional Research Service via Congress.gov.</p>
+    <p>Votes before November 13, 2026 were loaded from the open Yeas &amp; Nays dataset (MIT License), which compiles the same official records. Independents are counted with the party they caucus with.</p>
+    <p>A member "sided with" the other party when most Democrats and most Republicans in that chamber voted opposite ways and the member voted with the other party's majority. Missed votes and votes of Present do not count.</p>
+    <p>Found a mistake? The code and data are public at <a href="https://github.com/powerocoos/crossing-the-aisle" target="_blank" rel="noopener">github.com/powerocoos/crossing-the-aisle</a>.</p>
+  </footer>
+</div>
+<script src="/app.js?v={{V}}" defer></script>
+</body>
+</html>

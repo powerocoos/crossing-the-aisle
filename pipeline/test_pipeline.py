@@ -54,6 +54,12 @@ bad = [x["id"] for x in data["members"] if x["pl"] and not (0 <= x["x"] <= x["pl
 check("member statistics are ordered sensibly", not bad, bad[:3])
 check("both parties present", {x["g"] for x in data["members"]} >= {"D", "R"})
 
+from build import render_pages
+pages = list(render_pages(data))
+paths = [p[0] for p in pages]
+check("one page per vote, bill and member", len(paths) == len(set(paths)) == 5 + len(data["votes"]) + len(data["bills"]) + len(data["members"]))
+check("every page has a title and description", all(p[1] and p[2] for p in pages))
+
 if failures:
     print("%d check(s) failed" % len(failures))
     sys.exit(1)
