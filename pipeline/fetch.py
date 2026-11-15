@@ -17,6 +17,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 
 from common import (CONGRESS, DATA, FIRST_YEAR, SESSIONS, VOTES_DIR, bill_key, http_get, read_json,
                     vote_id, vote_path, write_json)
@@ -147,16 +148,26 @@ def add_stubs(members, people):
     return sorted(members, key=lambda m: m["id"])
 
 
-def fetch_summaries(bills, limit=40):
-    """Best effort: fill in missing CRS summaries. A failure here never stops the update."""
+SUMMARY_MAX = 1800
+
+
+def needs_summary(b):
+    """No summary yet, or one that was cut short (ends with an ellipsis)."""
+    return not b.get("sum") or b["sum"].rstrip().endswith("\u2026")
+
+
+def fetch_summaries(bills, limit=120):
+    """Best effort: fill in missing or cut-off CRS summaries. Returns (filled, note). Never stops the update."""
     key = os.environ.get("CONGRESS_API_KEY")
     if not key:
-        return 0
-    filled = 0
+        return 0, "no API key set"
+    filled = tried = 0
+    note = ""
     for bk, b in bills.items():
-        if b.get("sum") or filled >= limit:
+        if not needs_summary(b) or tried >= limit:
             continue
         _, bill_type, number = bk.split("-")
+        tried += 1
         try:
             status, body = http_get(SUMMARY_URL.format(c=CONGRESS, t=bill_type, n=number), headers={"X-Api-Key": key}, tries=2)
             items = json.loads(body).get("summaries") or [] if status == 200 else []
@@ -165,15 +176,18 @@ def fetch_summaries(bills, limit=40):
             text = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", items[-1].get("text") or ""))).strip()
             if b.get("t") and text.startswith(b["t"]):
                 text = text[len(b["t"]):].strip()
-            if len(text) > 520:
-                text = text[:520].rsplit(" ", 1)[0] + "…"
-            if text:
+            if len(text) > SUMMARY_MAX:
+                text = text[:SUMMARY_MAX].rsplit(" ", 1)[0] + "\u2026"
+            if text and text != b.get("sum"):
                 b["sum"] = text
                 filled += 1
-        except Exception as e:                      # noqa: BLE001 - optional step
-            print("summaries: skipped %s (%s)" % (bk, type(e).__name__), file=sys.stderr)
+        except urllib.error.HTTPError as e:
+            note = "Congress.gov refused the request (HTTP %d)%s" % (e.code, ": the API key was not accepted" if e.code in (401, 403) else "")
             break
-    return filled
+        except Exception as e:                      # noqa: BLE001 - optional step
+            note = "stopped early (%s)" % type(e).__name__
+            break
+    return filled, note or "key accepted, %d bills checked" % tried
 
 
 def verify(count, lis_map):
@@ -215,10 +229,11 @@ def main():
     write_json(MEMBERS_PATH, members, pretty=True)
 
     bills = read_json(BILLS_PATH, {})
-    filled = fetch_summaries(bills)
+    filled, note = fetch_summaries(bills)
     if filled:
         write_json(BILLS_PATH, bills, pretty=True)
     print("fetch: %d votes added or corrected, %d summaries added, %d people on the roster" % (changed, filled, len(members)))
+    print("SUMMARIES: %s (%d added)" % (note, filled))
     if args.verify:
         verify(args.verify, lis_map)
 
