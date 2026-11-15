@@ -149,7 +149,8 @@ function viewVote(id){var v=vById[id];if(!v)return '<div class="panel">Vote not 
   return h}
 function viewBill(key){var b=D.bills[key];if(!b)return '<div class="panel">Bill not found.</div>';
   return '<div class="meta" style="color:var(--muted);font-size:13px;margin-bottom:4px">'+esc(b.lab)+(b.intro?' · introduced '+fdate(b.intro):'')+'</div><h2>'+esc(b.t||b.lab)+'</h2>'+
-   (b.sum?'<p class="lede" style="color:var(--ink)">'+esc(b.sum)+'</p>':'')+
+   (b.plain?'<div class="panel plain"><div class="plainh">In plain language</div><p>'+esc(b.plain)+'</p><p class="note">Written with AI assistance as a simplification of the official summary below. It may leave out details.</p></div>':'')+
+   (b.sum?(b.plain?'<h3>Official summary</h3>':'')+'<p class="lede" style="color:var(--ink)">'+esc(b.sum)+'</p>':'')+
    '<div class="kv">'+(b.url?'<a href="'+esc(b.url)+'" target="_blank" rel="noopener">Full text and status on Congress.gov</a>':'')+'</div>'+
    '<h3>Roll calls on this measure ('+b.votes.length+')</h3><div class="list">'+b.votes.map(function(v){return voteRow(v)}).join('')+'</div>'}
 function viewMember(id){var m=mById[id];if(!m)return '<div class="panel">Member not found.</div>';

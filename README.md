@@ -54,3 +54,7 @@ Optional: set `CONGRESS_API_KEY` (free from api.congress.gov) to fill in bill su
 - "Find my rep" works by state, not by ZIP code or address.
 
 See `NOTICE.md` for data sources and credits.
+
+## Plain-language bill summaries
+
+`data/plain.json` holds short plain-language versions of official Congressional Research Service summaries, written with AI assistance. Each entry has `"ok": false` until a person has read it; only entries marked `"ok": true` are published, always labelled as a simplification and shown above the official summary. Only bills whose official summary is complete are eligible.

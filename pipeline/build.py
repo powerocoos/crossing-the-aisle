@@ -117,16 +117,19 @@ def build(members, bills, votes):
             "w": pct(st["pm"] - st["ag"], st["pm"]),
             "ag": st["ag"], "pm": st["pm"], "x": st["x"], "pl": st["pl"],
         })
+    plain = read_json(os.path.join(DATA, "plain.json"), {})  # only entries a person approved ("ok": true) are published
     used_bills = {v["b"] for v in out_votes if v["b"]}
     latest = max((v["dt"] for v in out_votes), default=None)
     data = {
         "meta": {"latest": latest, "votes": len(out_votes), "built": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")},
         "members": out_members, "hm": order["h"], "sm": order["s"], "votes": out_votes,
-        "bills": {k: b for k, b in bills.items() if k in used_bills},
+        "bills": {k: dict(b, **({"plain": plain[k]["t"]} if plain.get(k, {}).get("ok") and plain[k].get("t") else {}))
+                  for k, b in bills.items() if k in used_bills},
     }
     return data, unknown
 
 
+PLAIN_NOTE = "Written with AI assistance as a simplification of the official summary below. It may leave out details."
 SITE = "https://crossingtheaisle.us"
 NAME = "Crossing the Aisle"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -295,8 +298,10 @@ def render_pages(data):
         title = "%s · %s" % (clip("%s: %s" % (b["lab"], b.get("t") or ""), 80), NAME)
         desc = clip(b.get("sum") or "", 150) if b.get("sum") else "Every recorded House and Senate vote on %s, with how each party and each member voted." % b["lab"]
         body = ["<p>%s</p>" % esc(b["lab"]), "<h2>%s</h2>" % esc(b.get("t") or b["lab"])]
+        if b.get("plain"):
+            body.append("<h3>In plain language</h3><p>%s</p><p><small>%s</small></p>" % (esc(b["plain"]), esc(PLAIN_NOTE)))
         if b.get("sum"):
-            body.append("<p>%s</p>" % esc(b["sum"]))
+            body.append("%s<p>%s</p>" % ("<h3>Official summary</h3>" if b.get("plain") else "", esc(b["sum"])))
         if b.get("url"):
             body.append('<p><a href="%s" rel="noopener">Full text and status on Congress.gov</a></p>' % esc(b["url"]))
         body.append("<h3>Roll calls on this measure (%d)</h3><ul>%s</ul>" % (len(rolls), "".join("<li>%s: %s</li>" % (esc(v["q"]), vote_link(v)) for v in rolls)))

@@ -72,6 +72,12 @@ check("every ZIP code district has a current House member (vacancies allowed up 
 check("known ZIP codes (single-district places)", (zips.get("20001"), zips.get("82001"), zips.get("99501")) == ("DC0", "WY0", "AK0"), (zips.get("20001"), zips.get("82001"), zips.get("99501")))
 check("a split ZIP code lists several districts", any("," in v for v in zips.values()))
 
+plain = read_json(os.path.join(DATA, "plain.json"), {})
+bad = [k for k in plain if k not in read_json(os.path.join(DATA, "bills.json"), {})]
+check("plain-language entries belong to known bills", not bad, bad[:3])
+shown = {k for k, b in data["bills"].items() if b.get("plain")}
+check("only approved plain-language summaries are published", shown == {k for k, v in plain.items() if v.get("ok") and k in data["bills"]})
+
 if failures:
     print("%d check(s) failed" % len(failures))
     sys.exit(1)

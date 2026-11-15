@@ -102,3 +102,5 @@ footer a{color:var(--accent)}
 .topline{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px}
 .topline .back{margin:0}
 nav.tabs a{padding:12px 10px 9px;font-weight:600;color:var(--muted);white-space:nowrap;text-decoration:none}
+
+.plain p{margin:6px 0}.plainh{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}.plain .note{margin:6px 0 0}
